@@ -11,8 +11,6 @@ class Aplicacao:
     def __init__(self, root):
         self.root = root
         self.root.title(f"Gerenciador de Dados - BetterCall - v{__version__}")
-        # self.root.geometry("1250x700")
-        # self.root.resizable(width=False, height=False)
         self.root.configure(bg="#f0f0f0")
 
         parser = configparser.ConfigParser()
@@ -43,6 +41,9 @@ class Aplicacao:
         self.label_pesquisa = tk.Label(root, text="Pesquisar: ", bg="#f0f0f0", font=("Helvetica", 12))
         self.entry_pesquisa = tk.Entry(root, width=175)
 
+        self.botao_limpar = tk.Button(root, text="Limpar", command=self.limpar_dados, bg="#1B2451",
+                                         fg="#f0f0f0", font=("Helvetica", 10, "bold"), cursor="hand2")
+
         self.botao_pesquisar = tk.Button(root, text="Pesquisar", command=self.pesquisar_elementos, bg="#1B2451",
                                          fg="#f0f0f0", font=("Helvetica", 10, "bold"), cursor="hand2")
         self.botao_adicionar = tk.Button(root, text="Adicionar", command=self.abrir_janela_adicionar, bg="#1B2451",
@@ -51,6 +52,7 @@ class Aplicacao:
                                       font=("Helvetica", 10, "bold"), cursor="hand2")
         self.botao_apagar = tk.Button(root, text="Apagar", command=self.abrir_janela_apagar, bg="#ff0000", fg="#f0f0f0",
                                       font=("Helvetica", 10, "bold"), cursor="hand2")
+        self.separador = ttk.Separator(root, orient='horizontal')
 
         # Carregar imagem das setas
         seta_esquerda_img = Image.open('./assets/seta_esquerda.png').resize((20, 20))
@@ -85,12 +87,15 @@ class Aplicacao:
         self.entry_tabela.grid(row=0, column=1, padx=10, pady=10, sticky='w')
         self.label_coluna.grid(row=1, column=0, padx=10, pady=10, sticky='e')
         self.entry_coluna.grid(row=1, column=1, padx=10, pady=10, sticky='w')
-        self.label_pesquisa.grid(row=2, column=0, padx=10, pady=10, sticky='e')
-        self.entry_pesquisa.grid(row=2, column=1, padx=10, pady=10, sticky='w')
-        self.botao_pesquisar.grid(row=2, column=2, padx=10, pady=10, sticky='w')
-        self.botao_adicionar.grid(row=4, column=0, padx=10, pady=10, sticky='w')
-        self.botao_editar.grid(row=4, column=1, padx=10, pady=10, sticky='ew')
-        self.botao_apagar.grid(row=4, column=2, padx=10, pady=10, sticky='ew')
+        self.botao_limpar.grid(row=1, column=2, padx=10, pady=10, sticky='ew')
+        self.separador.grid(row=2, column=0, padx=10, pady=10, sticky='e')
+        self.label_pesquisa.grid(row=3, column=0, padx=10, pady=10, sticky='e')
+        self.entry_pesquisa.grid(row=3, column=1, padx=10, pady=10, sticky='w')
+        self.botao_pesquisar.grid(row=3, column=2, padx=10, pady=10, sticky='w')
+        self.separador.grid(row=4, column=0, padx=10, pady=10, sticky='e')
+        self.botao_adicionar.grid(row=5, column=0, padx=10, pady=10, sticky='w')
+        self.botao_editar.grid(row=5, column=1, padx=10, pady=10, sticky='ew')
+        self.botao_apagar.grid(row=5, column=2, padx=10, pady=10, sticky='ew')
         self.tree_resultados.grid(row=6, column=0, columnspan=2, padx=10, pady=10, sticky='nsew')
         self.scrollbar_y.grid(row=6, column=2, padx=10, pady=10, sticky='ns')
         self.scrollbar_x.grid(row=7, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
@@ -130,6 +135,12 @@ class Aplicacao:
             data = [item for item in self.todas_tabelas if valor in item.lower()]
         self.entry_tabela['values'] = data
         self.entry_tabela.event_generate('<Down>')
+
+    def limpar_dados(self):
+        self.entry_tabela.set('')
+        self.entry_coluna.set('')
+        self.entry_pesquisa.delete(0,'end')
+
 
     def filtrar_colunas(self, event):
         valor = self.entry_coluna.get().lower()
@@ -223,6 +234,8 @@ class Aplicacao:
             botao_adicionar = tk.Button(janela_adicionar, text="Adicionar", command=adicionar, bg="#1B2451",
                                         fg="#f0f0f0", font=("Helvetica", 10, "bold"), cursor="hand2")
             botao_adicionar.pack(pady=10)
+        else:
+            messagebox.showerror("Erro", "Nenhuma tabela selecionada para adicionar item.")
 
     def abrir_janela_editar(self):
         selected_item = self.tree_resultados.selection()
