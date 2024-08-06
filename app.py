@@ -6,11 +6,11 @@ import tkinter.font as tkFont
 import bd
 import configparser
 
-
+__version__ = '1.3'
 class Aplicacao:
     def __init__(self, root):
         self.root = root
-        self.root.title("Consulta Banco de Dados")
+        self.root.title(f"Gerenciador de Dados - BetterCall - v{__version__}")
         # self.root.geometry("1250x700")
         # self.root.resizable(width=False, height=False)
         self.root.configure(bg="#f0f0f0")
@@ -43,7 +43,6 @@ class Aplicacao:
         self.label_pesquisa = tk.Label(root, text="Pesquisar: ", bg="#f0f0f0", font=("Helvetica", 12))
         self.entry_pesquisa = tk.Entry(root, width=175)
 
-        # self.botao_listar = tk.Button(root, text="Listar Elementos", command=self.listar_elementos, bg="#1B2451", fg="#f0f0f0", font=("Helvetica", 10, "bold"), cursor="hand2")
         self.botao_pesquisar = tk.Button(root, text="Pesquisar", command=self.pesquisar_elementos, bg="#1B2451",
                                          fg="#f0f0f0", font=("Helvetica", 10, "bold"), cursor="hand2")
         self.botao_adicionar = tk.Button(root, text="Adicionar", command=self.abrir_janela_adicionar, bg="#1B2451",
@@ -66,11 +65,11 @@ class Aplicacao:
                                        cursor="hand2", borderwidth=0)
         self.botao_proxima.image = seta_direita_img
 
-        self.criadores = tk.Label(root, text="Desenvolvido por Marcos Tullio Silva de Souza e Samuel Grontoski",
+        self.criadores = tk.Label(root, text="Desenvolvido por Marcos Tullio e Samuel Grontoski",
                                   bg="#f0f0f0", font=("Helvetica", 10))
 
         # Criando Treeview
-        self.tree_resultados = ttk.Treeview(root, show='headings', height=20)
+        self.tree_resultados = ttk.Treeview(root, show='headings', height=10)
         self.scrollbar_y = ttk.Scrollbar(root, orient='vertical', command=self.tree_resultados.yview)
         self.scrollbar_x = ttk.Scrollbar(root, orient='horizontal', command=self.tree_resultados.xview)
         self.tree_resultados.configure(yscroll=self.scrollbar_y.set, xscroll=self.scrollbar_x.set)
@@ -88,7 +87,6 @@ class Aplicacao:
         self.entry_coluna.grid(row=1, column=1, padx=10, pady=10, sticky='w')
         self.label_pesquisa.grid(row=2, column=0, padx=10, pady=10, sticky='e')
         self.entry_pesquisa.grid(row=2, column=1, padx=10, pady=10, sticky='w')
-        # self.botao_listar.grid(row=3, column=0, padx=10, pady=10, sticky='ew')
         self.botao_pesquisar.grid(row=2, column=2, padx=10, pady=10, sticky='w')
         self.botao_adicionar.grid(row=4, column=0, padx=10, pady=10, sticky='w')
         self.botao_editar.grid(row=4, column=1, padx=10, pady=10, sticky='ew')
@@ -146,7 +144,7 @@ class Aplicacao:
         tabela = self.entry_tabela.get()
         coluna_id = self.entry_coluna.get()
         termo_pesquisa = self.entry_pesquisa.get()
-        if tabela:
+        if tabela and coluna_id:
             self.gerenciador_bd.conectar()
             total_elementos = self.gerenciador_bd.total_elementos(tabela)
             if total_elementos == 0:
@@ -176,7 +174,7 @@ class Aplicacao:
             for resultado in resultados:
                 self.tree_resultados.insert("", "end", values=resultado)
         else:
-            messagebox.showerror("Erro", "Por favor, insira o nome da tabela.")
+            messagebox.showerror("Erro", "Por favor, insira o nome da tabela/coluna.")
 
     def pesquisar_elementos(self):
         self.pagina_atual = 0
