@@ -8,6 +8,8 @@ import configparser
 import hashlib
 
 __version__ = '1.3'
+
+
 class Aplicacao:
     def __init__(self, root):
         self.root = root
@@ -43,7 +45,7 @@ class Aplicacao:
         self.entry_pesquisa = tk.Entry(root, width=175)
 
         self.botao_limpar = tk.Button(root, text="Limpar", command=self.limpar_dados, bg="#1B2451",
-                                         fg="#f0f0f0", font=("Helvetica", 10, "bold"), cursor="hand2")
+                                      fg="#f0f0f0", font=("Helvetica", 10, "bold"), cursor="hand2")
 
         self.botao_pesquisar = tk.Button(root, text="Pesquisar", command=self.pesquisar_elementos, bg="#1B2451",
                                          fg="#f0f0f0", font=("Helvetica", 10, "bold"), cursor="hand2")
@@ -140,8 +142,8 @@ class Aplicacao:
     def limpar_dados(self):
         self.entry_tabela.set('')
         self.entry_coluna.set('')
-        self.entry_pesquisa.delete(0,'end')
-
+        self.entry_pesquisa.delete(0, tk.END)
+        self.tree_resultados.delete(*self.tree_resultados.get_children())
 
     def filtrar_colunas(self, event):
         valor = self.entry_coluna.get().lower()
@@ -154,9 +156,9 @@ class Aplicacao:
 
     def listar_elementos(self):
         tabela = self.entry_tabela.get()
-        coluna_id = self.entry_coluna.get()
+        coluna = self.entry_coluna.get()
         termo_pesquisa = self.entry_pesquisa.get()
-        if tabela and coluna_id:
+        if tabela and coluna:
             self.gerenciador_bd.conectar()
             total_elementos = self.gerenciador_bd.total_elementos(tabela)
             if total_elementos == 0:
@@ -164,7 +166,7 @@ class Aplicacao:
                 messagebox.showinfo("Aviso", "Não há elementos nesta tabela.")
                 return
 
-            resultados = self.gerenciador_bd.listar_elementos(tabela, self.pagina_atual, coluna_id, termo_pesquisa)
+            resultados = self.gerenciador_bd.listar_elementos(tabela, self.pagina_atual, coluna, termo_pesquisa)
             colunas = self.gerenciador_bd.listar_colunas(tabela)
             self.gerenciador_bd.desconectar()
 
@@ -243,12 +245,10 @@ class Aplicacao:
         else:
             messagebox.showerror("Erro", "Nenhuma tabela selecionada para adicionar item.")
 
-
     def abrir_janela_editar(self):
         selected_item = self.tree_resultados.selection()
         if selected_item:
             tabela = self.entry_tabela.get()
-            coluna_id = self.entry_coluna.get()
             valores_selecionados = self.tree_resultados.item(selected_item, 'values')
             id_valor = valores_selecionados[0]
 
@@ -268,7 +268,7 @@ class Aplicacao:
                 entrada = tk.Entry(janela_editar, width=40)
                 # Se for a tabela 'colaboradores' e a coluna for 'senha', criar um campo para nova senha
                 if tabela == 'colaboradores' and coluna == 'col_senha':
-                    label.config(text="Nova Senha")
+                    label.config(text="col_senha")
                     entrada.insert(0, '')  # Não pré-popula a senha existente
                 else:
                     entrada.insert(0, valores_selecionados[i])
@@ -287,17 +287,19 @@ class Aplicacao:
                         if tabela == 'colaboradores' and coluna == 'col_senha':
                             if valor:  # Apenas criptografa se a nova senha foi fornecida
                                 valor = hashlib.md5(valor.encode()).hexdigest()
-
+                            else:
+                                valor = valores_selecionados[j]
                         valores.append(valor)
 
                     self.gerenciador_bd.conectar()
-                    self.gerenciador_bd.atualizar_elemento(tabela, coluna_id, id_valor, valores)
+                    self.gerenciador_bd.atualizar_elemento(tabela, colunas[0], id_valor, valores)
                     self.gerenciador_bd.desconectar()
                     janela_editar.destroy()
                     self.listar_elementos()
                     messagebox.showinfo("Sucesso", "Elemento editado com sucesso!")
                 except Exception as e:
                     messagebox.showerror("Erro", f"Ocorreu um erro ao editar o elemento: {str(e)}")
+                    print("erro:", str(e))
 
             botao_editar = tk.Button(janela_editar, text="Editar", command=editar, bg="#1B2451", fg="#f0f0f0",
                                      font=("Helvetica", 10, "bold"), cursor="hand2")
@@ -309,15 +311,19 @@ class Aplicacao:
         selected_item = self.tree_resultados.selection()
         if selected_item:
             tabela = self.entry_tabela.get()
-            coluna_id = self.entry_coluna.get()
-            valores_selecionados = self.tree_resultados.item(selected_item, 'values')
+            valores_selecionados = self.tree_resultados.item(selected_item, "values")
             id_valor = valores_selecionados[0]
+
+            # Obtendo as colunas da tabela selecionada
+            self.gerenciador_bd.conectar()
+            colunas = self.gerenciador_bd.listar_colunas(tabela)
+            self.gerenciador_bd.desconectar()
 
             confirmar = messagebox.askyesno("Confirmação", "Tem certeza que deseja apagar este elemento?")
             if confirmar:
                 try:
                     self.gerenciador_bd.conectar()
-                    self.gerenciador_bd.apagar_elemento(tabela, coluna_id, id_valor)
+                    self.gerenciador_bd.apagar_elemento(tabela, colunas[0], id_valor)
                     self.gerenciador_bd.desconectar()
                     self.listar_elementos()
                     messagebox.showinfo("Sucesso", "Elemento apagado com sucesso!")
