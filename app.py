@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 import tkinter.font as tkFont
 import bd
 import configparser
+import hashlib
 
 __version__ = '1.3'
 class Aplicacao:
@@ -205,37 +206,43 @@ class Aplicacao:
     def abrir_janela_adicionar(self):
         tabela = self.entry_tabela.get()
         if tabela:
-            self.gerenciador_bd.conectar()
-            colunas = self.gerenciador_bd.listar_colunas(tabela)
-            self.gerenciador_bd.desconectar()
-
-            janela_adicionar = tk.Toplevel(self.root)
-            janela_adicionar.title(f"Adicionar elemento em {tabela}")
-            janela_adicionar.geometry("400x300")
-            janela_adicionar.configure(bg="#f0f0f0")
-
-            entradas = []
-            for coluna in colunas:
-                label = tk.Label(janela_adicionar, text=coluna, bg="#f0f0f0", font=("Helvetica", 12))
-                label.pack(padx=10, pady=5)
-                entrada = tk.Entry(janela_adicionar, width=40)
-                entrada.pack(padx=10, pady=5)
-                entradas.append(entrada)
-
-            def adicionar():
-                valores = [entrada.get() for entrada in entradas]
+            try:
                 self.gerenciador_bd.conectar()
-                self.gerenciador_bd.adicionar_elemento(tabela, valores)
+                colunas = self.gerenciador_bd.listar_colunas(tabela)
                 self.gerenciador_bd.desconectar()
-                janela_adicionar.destroy()
-                self.listar_elementos()
-                messagebox.showinfo("Sucesso", "Elemento adicionado com sucesso!")
 
-            botao_adicionar = tk.Button(janela_adicionar, text="Adicionar", command=adicionar, bg="#1B2451",
-                                        fg="#f0f0f0", font=("Helvetica", 10, "bold"), cursor="hand2")
-            botao_adicionar.pack(pady=10)
+                janela_adicionar = tk.Toplevel(self.root)
+                janela_adicionar.title(f"Adicionar elemento em {tabela}")
+                janela_adicionar.configure(bg="#f0f0f0")
+
+                entradas = []
+                for coluna in colunas:
+                    label = tk.Label(janela_adicionar, text=coluna, bg="#f0f0f0", font=("Helvetica", 12))
+                    label.pack(padx=10, pady=5)
+                    entrada = tk.Entry(janela_adicionar, width=40)
+                    entrada.pack(padx=10, pady=5)
+                    entradas.append(entrada)
+
+                def adicionar():
+                    valores = [entrada.get() for entrada in entradas]
+                    try:
+                        self.gerenciador_bd.conectar()
+                        self.gerenciador_bd.adicionar_elemento(tabela, valores)
+                        self.gerenciador_bd.desconectar()
+                        janela_adicionar.destroy()
+                        self.listar_elementos()
+                        messagebox.showinfo("Sucesso", "Elemento adicionado com sucesso!")
+                    except Exception as e:
+                        messagebox.showerror("Erro", str(e))
+
+                botao_adicionar = tk.Button(janela_adicionar, text="Adicionar", command=adicionar, bg="#1B2451",
+                                            fg="#f0f0f0", font=("Helvetica", 10, "bold"), cursor="hand2")
+                botao_adicionar.pack(pady=10)
+            except Exception as e:
+                messagebox.showerror("Erro", str(e))
         else:
             messagebox.showerror("Erro", "Nenhuma tabela selecionada para adicionar item.")
+
 
     def abrir_janela_editar(self):
         selected_item = self.tree_resultados.selection()
@@ -251,30 +258,52 @@ class Aplicacao:
 
             janela_editar = tk.Toplevel(self.root)
             janela_editar.title(f"Editar elemento em {tabela}")
-            janela_editar.geometry("400x300")
             janela_editar.configure(bg="#f0f0f0")
 
             entradas = []
             for i, coluna in enumerate(colunas):
                 label = tk.Label(janela_editar, text=coluna, bg="#f0f0f0", font=("Helvetica", 12))
                 label.pack(padx=10, pady=5)
+
                 entrada = tk.Entry(janela_editar, width=40)
-                entrada.insert(0, valores_selecionados[i])
+                # Se for a tabela 'colaboradores' e a coluna for 'senha', criar um campo para nova senha
+                if tabela == 'colaboradores' and coluna == 'col_senha':
+                    label.config(text="Nova Senha")
+                    entrada.insert(0, '')  # Não pré-popula a senha existente
+                else:
+                    entrada.insert(0, valores_selecionados[i])
+
                 entrada.pack(padx=10, pady=5)
                 entradas.append(entrada)
 
             def editar():
-                valores = [entrada.get() for entrada in entradas]
-                self.gerenciador_bd.conectar()
-                self.gerenciador_bd.atualizar_elemento(tabela, coluna_id, id_valor, valores)
-                self.gerenciador_bd.desconectar()
-                janela_editar.destroy()
-                self.listar_elementos()
-                messagebox.showinfo("Sucesso", "Elemento editado com sucesso!")
+                try:
+                    valores = []
+                    for j, entrada in enumerate(entradas):
+                        valor = entrada.get()
+                        coluna = colunas[j]
+
+                        # Se for a nova senha, criptografa em MD5 antes de salvar
+                        if tabela == 'colaboradores' and coluna == 'col_senha':
+                            if valor:  # Apenas criptografa se a nova senha foi fornecida
+                                valor = hashlib.md5(valor.encode()).hexdigest()
+
+                        valores.append(valor)
+
+                    self.gerenciador_bd.conectar()
+                    self.gerenciador_bd.atualizar_elemento(tabela, coluna_id, id_valor, valores)
+                    self.gerenciador_bd.desconectar()
+                    janela_editar.destroy()
+                    self.listar_elementos()
+                    messagebox.showinfo("Sucesso", "Elemento editado com sucesso!")
+                except Exception as e:
+                    messagebox.showerror("Erro", f"Ocorreu um erro ao editar o elemento: {str(e)}")
 
             botao_editar = tk.Button(janela_editar, text="Editar", command=editar, bg="#1B2451", fg="#f0f0f0",
                                      font=("Helvetica", 10, "bold"), cursor="hand2")
             botao_editar.pack(pady=10)
+        else:
+            messagebox.showerror("Erro", "Nenhum elemento selecionado para editar.")
 
     def abrir_janela_apagar(self):
         selected_item = self.tree_resultados.selection()
@@ -286,11 +315,14 @@ class Aplicacao:
 
             confirmar = messagebox.askyesno("Confirmação", "Tem certeza que deseja apagar este elemento?")
             if confirmar:
-                self.gerenciador_bd.conectar()
-                self.gerenciador_bd.apagar_elemento(tabela, coluna_id, id_valor)
-                self.gerenciador_bd.desconectar()
-                self.listar_elementos()
-                messagebox.showinfo("Sucesso", "Elemento apagado com sucesso!")
+                try:
+                    self.gerenciador_bd.conectar()
+                    self.gerenciador_bd.apagar_elemento(tabela, coluna_id, id_valor)
+                    self.gerenciador_bd.desconectar()
+                    self.listar_elementos()
+                    messagebox.showinfo("Sucesso", "Elemento apagado com sucesso!")
+                except Exception as e:
+                    messagebox.showerror("Erro", f"Ocorreu um erro ao apagar o elemento: {str(e)}")
         else:
             messagebox.showerror("Erro", "Nenhum elemento selecionado para apagar.")
 
